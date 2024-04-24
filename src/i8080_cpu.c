@@ -74,42 +74,58 @@ void print_state(i8080_t *cpu){
     }
 }
 
+static void set_flags(i8080_t *cpu, uint16_t result);
+
 uint8_t emulate_cycle(i8080_t *cpu){
     uint8_t cycles = 0;
     if(cpu != NULL){
         uint8_t* opcode = read_memory(cpu, cpu->PC);
-        uint16_t address;
+        uint16_t word;
         bool condition = false;
+        uint8_t reg, msb, lsb;
+        uint8_t *reg1, *reg2;
         if(opcode != NULL){
             switch(*opcode){
 
+                // ADI instruction
+                case 0xC6: // ADI
+                    ADD(cpu, *read_memory(cpu, cpu->PC + 1));
+                    cpu->PC += 2;
+                    cycles = 7;
+                    break;
+
+                // ADD instructions
                 case 0x80: // ADD B
-                    ADD(cpu, cpu->B);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x81: // ADD C
-                    ADD(cpu, cpu->C);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x82: // ADD D
-                    ADD(cpu, cpu->D);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x83: // ADD E
-                    ADD(cpu, cpu->E);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x84: // ADD H
-                    ADD(cpu, cpu->H);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x85: // ADD L
-                    ADD(cpu, cpu->L);
+                case 0x87: // ADD A
+                    switch(*opcode){
+                        case 0x80: // ADD B
+                            reg = cpu->B;
+                            break;
+                        case 0x81: // ADD C
+                            reg = cpu->C;
+                            break;
+                        case 0x82: // ADD D
+                            reg = cpu->D;
+                            break;
+                        case 0x83: // ADD E
+                            reg = cpu->E;
+                            break;
+                        case 0x84: // ADD H
+                            reg = cpu->H;
+                            break;
+                        case 0x85: // ADD L
+                            reg = cpu->L;
+                            break;
+                        case 0x87: // ADD A
+                            reg = cpu->A;
+                            break;
+                    }
+                    ADD(cpu, reg);
                     cpu->PC++;
                     cycles = 4;
                     break;
@@ -118,43 +134,33 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cpu->PC++;
                     cycles = 7;
                     break;
-                case 0x87: // ADD A
-                    ADD(cpu, cpu->A);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
-                case 0xC6: // ADI
-                    ADD(cpu, *read_memory(cpu, cpu->PC + 1));
-                    cpu->PC += 2;
-                    cycles = 7;
-                    break;
+
+                // ADC instructions
                 case 0x88: // ADC B
-                    ADD(cpu, cpu->B + cpu->flags.cy);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x89: // ADC C
-                    ADD(cpu,cpu->C + cpu->flags.cy);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x8A: // ADC D
-                    ADD(cpu,cpu->D + cpu->flags.cy);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x8B: // ADC E
-                    ADD(cpu, cpu->E + cpu->flags.cy);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x8C: // ADC H
-                    ADD(cpu, cpu->H + cpu->flags.cy);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x8D: // ADC L
-                    ADD(cpu, cpu->L + cpu->flags.cy);
+                case 0x8F: // ADC A
+                    reg = cpu->flags.cy;
+                    switch(*opcode){
+                        case 0x88: // ADC B
+                            reg += cpu->B;
+                        case 0x89: // ADC C
+                            reg += cpu->C;
+                        case 0x8A: // ADC D
+                            reg += cpu->D;
+                        case 0x8B: // ADC E
+                            reg += cpu->E;
+                        case 0x8C: // ADC H
+                            reg += cpu->H;
+                        case 0x8D: // ADC L
+                            reg += cpu->L;
+                        case 0x8F: // ADC A
+                            reg += cpu->A;
+                    }
+                    ADD(cpu, reg);
                     cpu->PC++;
                     cycles = 4;
                     break;
@@ -163,39 +169,39 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cpu->PC++;
                     cycles = 7;
                     break;
-                case 0x8F: // ADC A
-                    ADD(cpu, cpu->A + cpu->flags.cy);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
 
+                // SUB instructions
                 case 0x90: // SUB B
-                    SUB(cpu, cpu->B);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x91: // SUB C
-                    SUB(cpu, cpu->C);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x92: // SUB D
-                    SUB(cpu, cpu->D);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x93: // SUB E
-                    SUB(cpu, cpu->E);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x94: // SUB H
-                    SUB(cpu, cpu->H);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x95: // SUB L
-                    SUB(cpu, cpu->L);
+                case 0x97: // SUB A
+                    switch (*opcode) {
+                        case 0x90: // SUB B
+                            reg = cpu->B;
+                            break;
+                        case 0x91: // SUB C
+                            reg = cpu->C;
+                            break;
+                        case 0x92: // SUB D
+                            reg = cpu->D;
+                            break;
+                        case 0x93: // SUB E
+                            reg = cpu->E;
+                            break;
+                        case 0x94: // SUB H
+                            reg = cpu->H;
+                            break;
+                        case 0x95: // SUB L
+                            reg = cpu->L;
+                            break;
+                        case 0x97: // SUB A
+                            reg = cpu->A;
+                            break;
+                    }
+                    SUB(cpu, reg);
                     cpu->PC++;
                     cycles = 4;
                     break;
@@ -204,38 +210,39 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cpu->PC++;
                     cycles = 7;
                     break;
-                case 0x97: // SUB A
-                    SUB(cpu, cpu->A);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
+
                 case 0x98: // SBB B
-                    SUB(cpu, cpu->B - cpu->flags.cy);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x99: // SBB C
-                    SUB(cpu, cpu->C - cpu->flags.cy);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x9A: // SBB D
-                    SUB(cpu, cpu->D - cpu->flags.cy);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x9B: // SBB E
-                    SUB(cpu, cpu->E - cpu->flags.cy);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x9C: // SBB H
-                    SUB(cpu, cpu->H - cpu->flags.cy);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0x9D: // SBB L
-                    SUB(cpu, cpu->L - cpu->flags.cy);
+                case 0x9F: // SBB A
+                    switch (*opcode) {
+                        case 0x98: // SBB B
+                            reg = cpu->B;
+                            break;
+                        case 0x99: // SBB C
+                            reg = cpu->C;
+                            break;
+                        case 0x9A: // SBB D
+                            reg = cpu->D;
+                            break;
+                        case 0x9B: // SBB E
+                            reg = cpu->E;
+                            break;
+                        case 0x9C: // SBB H
+                            reg = cpu->H;
+                            break;
+                        case 0x9D: // SBB L
+                            reg = cpu->L;
+                            break;
+                        case 0x9F: // SBB A
+                            reg = cpu->A;
+                            break;
+                    }
+                    reg -= cpu->flags.cy;
+                    SUB(cpu, reg);
                     cpu->PC++;
                     cycles = 4;
                     break;
@@ -244,44 +251,45 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cpu->PC++;
                     cycles = 7;
                     break;
-                case 0x9F: // SBB A
-                    SUB(cpu, cpu->A - cpu->flags.cy);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
+                // SUI instruction
                 case 0xD6: // SUI
                     SUB(cpu, *read_memory(cpu, cpu->PC + 1));
                     cpu->PC += 2;
                     cycles = 7;
                     break;
 
+                // ANA Instructions
                 case 0xA0: // ANA B
-                    ANA(cpu, cpu->B);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xA1: // ANA C
-                    ANA(cpu, cpu->C);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xA2: // ANA D
-                    ANA(cpu, cpu->D);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xA3: // ANA E
-                    ANA(cpu, cpu->E);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xA4: // ANA H
-                    ANA(cpu, cpu->H);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xA5: // ANA L
-                    ANA(cpu, cpu->L);
+                case 0xA7: // ANA A
+                    switch (*opcode) {
+                        case 0xA0: // ANA B
+                            reg = cpu->B;
+                            break;
+                        case 0xA1: // ANA C
+                            reg = cpu->C;
+                            break;
+                        case 0xA2: // ANA D
+                            reg = cpu->D;
+                            break;
+                        case 0xA3: // ANA E
+                            reg = cpu->E;
+                            break;
+                        case 0xA4: // ANA H
+                            reg = cpu->H;
+                            break;
+                        case 0xA5: // ANA L
+                            reg = cpu->L;
+                            break;
+                        case 0xA7: // ANA A
+                            reg = cpu->A;
+                            break;
+                    }
+                    ANA(cpu, reg);
                     cpu->PC++;
                     cycles = 4;
                     break;
@@ -290,44 +298,46 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cpu->PC++;
                     cycles = 7;
                     break;
-                case 0xA7: // ANA A
-                    ANA(cpu, cpu->A);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
+
+                // ANI Instruction
                 case 0xE6: // ANI
                     ANA(cpu, *read_memory(cpu, cpu->PC + 1));
                     cpu->PC += 2;
                     cycles = 7;
                     break;
 
+                // ORA Instructions
                 case 0xB0: // ORA B
-                    ORA(cpu, cpu->B);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xB1: // ORA C
-                    ORA(cpu, cpu->C);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xB2: // ORA D
-                    ORA(cpu, cpu->D);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xB3: // ORA E
-                    ORA(cpu, cpu->E);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xB4: // ORA H
-                    ORA(cpu, cpu->H);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xB5: // ORA L
-                    ORA(cpu, cpu->L);
+                case 0xB7: // ORA A
+                    switch (*opcode) {
+                        case 0xB0: // ORA B
+                            reg = cpu->B;
+                            break;
+                        case 0xB1: // ORA C
+                            reg = cpu->C;
+                            break;
+                        case 0xB2: // ORA D
+                            reg = cpu->D;
+                            break;
+                        case 0xB3: // ORA E
+                            reg = cpu->E;
+                            break;
+                        case 0xB4: // ORA H
+                            reg = cpu->H;
+                            break;
+                        case 0xB5: // ORA L
+                            reg = cpu->L;
+                            break;
+                        case 0xB7: // ORA A
+                            reg = cpu->A;
+                            break;
+                    }
+                    ORA(cpu, reg);
                     cpu->PC++;
                     cycles = 4;
                     break;
@@ -336,44 +346,46 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cpu->PC++;
                     cycles = 7;
                     break;
-                case 0xB7: // ORA A
-                    ORA(cpu, cpu->A);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
+
+                // ORI Instruction
                 case 0xF6: // ORI
                     ORA(cpu, *read_memory(cpu, cpu->PC + 1));
                     cpu->PC += 2;
                     cycles = 7;
                     break;
 
+                // XRA Instructions
                 case 0xA8: // XRA B
-                    XRA(cpu, cpu->B);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xA9: // XRA C
-                    XRA(cpu, cpu->C);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xAA: // XRA D
-                    XRA(cpu, cpu->D);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xAB: // XRA E
-                    XRA(cpu, cpu->E);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xAC: // XRA H
-                    XRA(cpu, cpu->H);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xAD: // XRA L
-                    XRA(cpu, cpu->L);
+                case 0xAF: // XRA A
+                    switch(*opcode){
+                        case 0xA8: // XRA B
+                            reg = cpu->B;
+                            break;
+                        case 0xA9: // XRA C
+                            reg = cpu->C;
+                            break;
+                        case 0xAA: // XRA D
+                            reg = cpu->D;
+                            break;
+                        case 0xAB: // XRA E
+                            reg = cpu->E;
+                            break;
+                        case 0xAC: // XRA H
+                            reg = cpu->H;
+                            break;
+                        case 0xAD: // XRA L
+                            reg = cpu->L;
+                            break;
+                        case 0xAF: // XRA A
+                            reg = cpu->A;
+                            break;
+                    }
+                    XRA(cpu, reg);
                     cpu->PC++;
                     cycles = 4;
                     break;
@@ -382,44 +394,46 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cpu->PC++;
                     cycles = 7;
                     break;
-                case 0xAF: // XRA A
-                    XRA(cpu, cpu->A);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
+
+                // XRI Instruction
                 case 0xEE: // XRI
                     XRA(cpu, *read_memory(cpu, cpu->PC + 1));
                     cpu->PC += 2;
                     cycles = 7;
                     break;
 
+                // CMP Instructions
                 case 0xB8: // CMP B
-                    CMP(cpu, cpu->B);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xB9: // CMP C
-                    CMP(cpu, cpu->C);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xBA: // CMP D
-                    CMP(cpu, cpu->D);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xBB: // CMP E
-                    CMP(cpu, cpu->E);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xBC: // CMP H
-                    CMP(cpu, cpu->H);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
                 case 0xBD: // CMP L
-                    CMP(cpu, cpu->L);
+                case 0xBF: // CMP A
+                    switch(*opcode){
+                        case 0xB8: // CMP B
+                            reg = cpu->B;
+                            break;
+                        case 0xB9: // CMP C
+                            reg = cpu->C;
+                            break;
+                        case 0xBA: // CMP D
+                            reg = cpu->D;
+                            break;
+                        case 0xBB: // CMP E
+                            reg = cpu->E;
+                            break;
+                        case 0xBC: // CMP H
+                            reg = cpu->H;
+                            break;
+                        case 0xBD: // CMP L
+                            reg = cpu->L;
+                            break;
+                        case 0xBF: // CMP A
+                            reg = cpu->A;
+                            break;
+                    }
+                    CMP(cpu, reg);
                     cpu->PC++;
                     cycles = 4;
                     break;
@@ -428,44 +442,45 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cpu->PC++;
                     cycles = 7;
                     break;
-                case 0xBF: // CMP A
-                    CMP(cpu, cpu->A);
-                    cpu->PC++;
-                    cycles = 4;
-                    break;
+
+                // CPI Instruction
                 case 0xFE: // CPI
                     CMP(cpu, *read_memory(cpu, cpu->PC + 1));
                     cpu->PC += 2;
                     cycles = 7;
                     break;
 
+                // INR Instructions
                 case 0x04: // INR B
-                    INR(cpu, &cpu->B);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x0C: // INR C
-                    INR(cpu, &cpu->C);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x14: // INR D
-                    INR(cpu, &cpu->D);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x1C: // INR E
-                    INR(cpu, &cpu->E);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x24: // INR H
-                    INR(cpu, &cpu->H);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x2C: // INR L
-                    INR(cpu, &cpu->L);
+                case 0x3C: // INR A
+                    switch(*opcode){
+                        case 0x04: // INR B
+                            INR(cpu, &cpu->B);
+                            break;
+                        case 0x0C: // INR C
+                            INR(cpu, &cpu->C);
+                            break;
+                        case 0x14: // INR D
+                            INR(cpu, &cpu->D);
+                            break;
+                        case 0x1C: // INR E
+                            INR(cpu, &cpu->E);
+                            break;
+                        case 0x24: // INR H
+                            INR(cpu, &cpu->H);
+                            break;
+                        case 0x2C: // INR L
+                            INR(cpu, &cpu->L);
+                            break;
+                        case 0x3C: // INR A
+                            INR(cpu, &cpu->A);
+                            break;
+                    }
                     cpu->PC++;
                     cycles = 5;
                     break;
@@ -474,12 +489,8 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cpu->PC++;
                     cycles = 10;
                     break;
-                case 0x3C: // INR A
-                    INR(cpu, &cpu->A);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
 
+                // INX Instructions
                 case 0x03: // INX B
                     INX(cpu, &cpu->B, &cpu->C);
                     cpu->PC++;
@@ -501,33 +512,37 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cycles = 5;
                     break;
 
+                // DCR Instructions
                 case 0x05: // DCR B
-                    DCR(cpu, &cpu->B);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x0D: // DCR C
-                    DCR(cpu, &cpu->C);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x15: // DCR D
-                    DCR(cpu, &cpu->D);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x1D: // DCR E
-                    DCR(cpu, &cpu->E);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x25: // DCR H
-                    DCR(cpu, &cpu->H);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x2D: // DCR L
-                    DCR(cpu, &cpu->L);
+                case 0x3D: // DCR A
+                    switch(*opcode){
+                        case 0x05: // DCR B
+                            DCR(cpu, &cpu->B);
+                            break;
+                        case 0x0D: // DCR C
+                            DCR(cpu, &cpu->C);
+                            break;
+                        case 0x15: // DCR D
+                            DCR(cpu, &cpu->D);
+                            break;
+                        case 0x1D: // DCR E
+                            DCR(cpu, &cpu->E);
+                            break;
+                        case 0x25: // DCR H
+                            DCR(cpu, &cpu->H);
+                            break;
+                        case 0x2D: // DCR L
+                            DCR(cpu, &cpu->L);
+                            break;
+                        case 0x3D: // DCR A
+                            DCR(cpu, &cpu->A);
+                            break;
+                    }
                     cpu->PC++;
                     cycles = 5;
                     break;
@@ -536,12 +551,8 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cpu->PC++;
                     cycles = 10;
                     break;
-                case 0x3D: // DCR A
-                    DCR(cpu, &cpu->A);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
 
+                // DCX Instructions
                 case 0x0B: // DCX B
                     DCX(cpu, &cpu->B, &cpu->C);
                     cpu->PC++;
@@ -563,6 +574,7 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cycles = 5;
                     break;
 
+                // DAD Instructions
                 case 0x09: // DAD B
                     DAD(cpu, cpu->B, cpu->C);
                     cpu->PC++;
@@ -584,351 +596,369 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cycles = 10;
                     break;
 
-
-
+                // MOV Instructions
                 case 0x40: // MOV B, B
-                    MOV(cpu, &cpu->B, &cpu->B);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x41: // MOV B, C
-                    MOV(cpu, &cpu->B, &cpu->C);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x42: // MOV B, D
-                    MOV(cpu, &cpu->B, &cpu->D);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x43: // MOV B, E
-                    MOV(cpu, &cpu->B, &cpu->E);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x44: // MOV B, H
-                    MOV(cpu, &cpu->B, &cpu->H);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x45: // MOV B, L
-                    MOV(cpu, &cpu->B, &cpu->L);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
-                case 0x46: // MOV B, M
-                    MOV(cpu, &cpu->B, read_memory(cpu, TO16BIT(cpu->H, cpu->L)));
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
                 case 0x47: // MOV B, A
-                    MOV(cpu, &cpu->B, &cpu->A);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x48: // MOV C, B
-                    MOV(cpu, &cpu->C, &cpu->B);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x49: // MOV C, C
-                    MOV(cpu, &cpu->C, &cpu->C);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x4A: // MOV C, D
-                    MOV(cpu, &cpu->C, &cpu->D);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x4B: // MOV C, E
-                    MOV(cpu, &cpu->C, &cpu->E);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x4C: // MOV C, H
-                    MOV(cpu, &cpu->C, &cpu->H);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x4D: // MOV C, L
-                    MOV(cpu, &cpu->C, &cpu->L);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
-                case 0x4E: // MOV C, M
-                    MOV(cpu, &cpu->C, read_memory(cpu, TO16BIT(cpu->H, cpu->L)));
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
                 case 0x4F: // MOV C, A
-                    MOV(cpu, &cpu->C, &cpu->A);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x50: // MOV D, B
-                    MOV(cpu, &cpu->D, &cpu->B);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x51: // MOV D, C
-                    MOV(cpu, &cpu->D, &cpu->C);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x52: // MOV D, D
-                    MOV(cpu, &cpu->D, &cpu->D);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x53: // MOV D, E
-                    MOV(cpu, &cpu->D, &cpu->E);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x54: // MOV D, H
-                    MOV(cpu, &cpu->D, &cpu->H);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x55: // MOV D, L
-                    MOV(cpu, &cpu->D, &cpu->L);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
-                case 0x56: // MOV D, M
-                    MOV(cpu, &cpu->D, read_memory(cpu, TO16BIT(cpu->H, cpu->L)));
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
                 case 0x57: // MOV D, A
-                    MOV(cpu, &cpu->D, &cpu->A);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x58: // MOV E, B
-                    MOV(cpu, &cpu->E, &cpu->B);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x59: // MOV E, C
-                    MOV(cpu, &cpu->E, &cpu->C);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x5A: // MOV E, D
-                    MOV(cpu, &cpu->E, &cpu->D);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x5B: // MOV E, E
-                    MOV(cpu, &cpu->E, &cpu->E);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x5C: // MOV E, H
-                    MOV(cpu, &cpu->E, &cpu->H);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x5D: // MOV E, L
-                    MOV(cpu, &cpu->E, &cpu->L);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
-                case 0x5E: // MOV E, M
-                    MOV(cpu, &cpu->E, read_memory(cpu, TO16BIT(cpu->H, cpu->L)));
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
                 case 0x5F: // MOV E, A
-                    MOV(cpu, &cpu->E, &cpu->A);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x60: // MOV H, B
-                    MOV(cpu, &cpu->H, &cpu->B);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x61: // MOV H, C
-                    MOV(cpu, &cpu->H, &cpu->C);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x62: // MOV H, D
-                    MOV(cpu, &cpu->H, &cpu->D);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x63: // MOV H, E
-                    MOV(cpu, &cpu->H, &cpu->E);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x64: // MOV H, H
-                    MOV(cpu, &cpu->H, &cpu->H);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x65: // MOV H, L
-                    MOV(cpu, &cpu->H, &cpu->L);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
-                case 0x66: // MOV H, M
-                    MOV(cpu, &cpu->H, read_memory(cpu, TO16BIT(cpu->H, cpu->L)));
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
                 case 0x67: // MOV H, A
-                    MOV(cpu, &cpu->H, &cpu->A);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x68: // MOV L, B
-                    MOV(cpu, &cpu->L, &cpu->B);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x69: // MOV L, C
-                    MOV(cpu, &cpu->L, &cpu->C);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x6A: // MOV L, D
-                    MOV(cpu, &cpu->L, &cpu->D);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x6B: // MOV L, E
-                    MOV(cpu, &cpu->L, &cpu->E);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x6C: // MOV L, H
-                    MOV(cpu, &cpu->L, &cpu->H);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x6D: // MOV L, L
-                    MOV(cpu, &cpu->L, &cpu->L);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
-                case 0x6E: // MOV L, M
-                    MOV(cpu, &cpu->L, read_memory(cpu, TO16BIT(cpu->H, cpu->L)));
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
                 case 0x6F: // MOV L, A
-                    MOV(cpu, &cpu->L, &cpu->A);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
-                case 0x70: // MOV M, B
-                    MOV(cpu, read_memory(cpu, TO16BIT(cpu->H, cpu->L)), &cpu->B);
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
-                case 0x71: // MOV M, C
-                    MOV(cpu, read_memory(cpu, TO16BIT(cpu->H, cpu->L)), &cpu->C);
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
-                case 0x72: // MOV M, D
-                    MOV(cpu, read_memory(cpu, TO16BIT(cpu->H, cpu->L)), &cpu->D);
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
-                case 0x73: // MOV M, E
-                    MOV(cpu, read_memory(cpu, TO16BIT(cpu->H, cpu->L)), &cpu->E);
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
-                case 0x74: // MOV M, H
-                    MOV(cpu, read_memory(cpu, TO16BIT(cpu->H, cpu->L)), &cpu->H);
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
-                case 0x75: // MOV M, L
-                    MOV(cpu, read_memory(cpu, TO16BIT(cpu->H, cpu->L)), &cpu->L);
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
-                case 0x77: // MOV M, A
-                    MOV(cpu, read_memory(cpu, TO16BIT(cpu->H, cpu->L)), &cpu->A);
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
                 case 0x78: // MOV A, B
-                    MOV(cpu, &cpu->A, &cpu->B);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x79: // MOV A, C
-                    MOV(cpu, &cpu->A, &cpu->C);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x7A: // MOV A, D
-                    MOV(cpu, &cpu->A, &cpu->D);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x7B: // MOV A, E
-                    MOV(cpu, &cpu->A, &cpu->E);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x7C: // MOV A, H
-                    MOV(cpu, &cpu->A, &cpu->H);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
                 case 0x7D: // MOV A, L
-                    MOV(cpu, &cpu->A, &cpu->L);
-                    cpu->PC++;
-                    cycles = 5;
-                    break;
-                case 0x7E: // MOV A, M
-                    MOV(cpu, &cpu->A, read_memory(cpu, TO16BIT(cpu->H, cpu->L)));
-                    cpu->PC++;
-                    cycles = 7;
-                    break;
                 case 0x7F: // MOV A, A
-                    MOV(cpu, &cpu->A, &cpu->A);
+                    switch (*opcode) {
+                        case 0x40: // MOV B, B
+                            reg1 = &cpu->B;
+                            reg2 = &cpu->B;
+                            break;
+                        case 0x41: // MOV B, C
+                            reg1 = &cpu->B;
+                            reg2 = &cpu->C;
+                            break;
+                        case 0x42: // MOV B, D
+                            reg1 = &cpu->B;
+                            reg2 = &cpu->D;
+                            break;
+                        case 0x43: // MOV B, E
+                            reg1 = &cpu->B;
+                            reg2 = &cpu->E;
+                            break;
+                        case 0x44: // MOV B, H
+                            reg1 = &cpu->B;
+                            reg2 = &cpu->H;
+                            break;
+                        case 0x45: // MOV B, L
+                            reg1 = &cpu->B;
+                            reg2 = &cpu->L;
+                            break;
+                        case 0x47: // MOV B, A
+                            reg1 = &cpu->B;
+                            reg2 = &cpu->A;
+                            break;
+                        case 0x48: // MOV C, B
+                            reg1 = &cpu->C;
+                            reg2 = &cpu->B;
+                            break;
+                        case 0x49: // MOV C, C
+                            reg1 = &cpu->C;
+                            reg2 = &cpu->C;
+                            break;
+                        case 0x4A: // MOV C, D
+                            reg1 = &cpu->C;
+                            reg2 = &cpu->D;
+                            break;
+                        case 0x4B: // MOV C, E
+                            reg1 = &cpu->C;
+                            reg2 = &cpu->E;
+                            break;
+                        case 0x4C: // MOV C, H
+                            reg1 = &cpu->C;
+                            reg2 = &cpu->H;
+                            break;
+                        case 0x4D: // MOV C, L
+                            reg1 = &cpu->C;
+                            reg2 = &cpu->L;
+                            break;
+                        case 0x4F: // MOV C, A
+                            reg1 = &cpu->C;
+                            reg2 = &cpu->A;
+                            break;
+                        case 0x50: // MOV D, B
+                            reg1 = &cpu->D;
+                            reg2 = &cpu->B;
+                            break;
+                        case 0x51: // MOV D, C
+                            reg1 = &cpu->D;
+                            reg2 = &cpu->C;
+                            break;
+                        case 0x52: // MOV D, D
+                            reg1 = &cpu->D;
+                            reg2 = &cpu->D;
+                            break;
+                        case 0x53: // MOV D, E
+                            reg1 = &cpu->D;
+                            reg2 = &cpu->E;
+                            break;
+                        case 0x54: // MOV D, H
+                            reg1 = &cpu->D;
+                            reg2 = &cpu->H;
+                            break;
+                        case 0x55: // MOV D, L
+                            reg1 = &cpu->D;
+                            reg2 = &cpu->L;
+                            break;
+                        case 0x57: // MOV D, A
+                            reg1 = &cpu->D;
+                            reg2 = &cpu->A;
+                            break;
+                        case 0x58: // MOV E, B
+                            reg1 = &cpu->E;
+                            reg2 = &cpu->B;
+                            break;
+                        case 0x59: // MOV E, C
+                            reg1 = &cpu->E;
+                            reg2 = &cpu->C;
+                            break;
+                        case 0x5A: // MOV E, D
+                            reg1 = &cpu->E;
+                            reg2 = &cpu->D;
+                            break;
+                        case 0x5B: // MOV E, E
+                            reg1 = &cpu->E;
+                            reg2 = &cpu->E;
+                            break;
+                        case 0x5C: // MOV E, H
+                            reg1 = &cpu->E;
+                            reg2 = &cpu->H;
+                            break;
+                        case 0x5D: // MOV E, L
+                            reg1 = &cpu->E;
+                            reg2 = &cpu->L;
+                            break;
+                        case 0x5F: // MOV E, A
+                            reg1 = &cpu->E;
+                            reg2 = &cpu->A;
+                            break;
+                        case 0x60: // MOV H, B
+                            reg1 = &cpu->H;
+                            reg2 = &cpu->B;
+                            break;
+                        case 0x61: // MOV H, C
+                            reg1 = &cpu->H;
+                            reg2 = &cpu->C;
+                            break;
+                        case 0x62: // MOV H, D
+                            reg1 = &cpu->H;
+                            reg2 = &cpu->D;
+                            break;
+                        case 0x63: // MOV H, E
+                            reg1 = &cpu->H;
+                            reg2 = &cpu->E;
+                            break;
+                        case 0x64: // MOV H, H
+                            reg1 = &cpu->H;
+                            reg2 = &cpu->H;
+                            break;
+                        case 0x65: // MOV H, L
+                            reg1 = &cpu->H;
+                            reg2 = &cpu->L;
+                            break;
+                        case 0x67: // MOV H, A
+                            reg1 = &cpu->H;
+                            reg2 = &cpu->A;
+                            break;
+                        case 0x68: // MOV L, B
+                            reg1 = &cpu->L;
+                            reg2 = &cpu->B;
+                            break;
+                        case 0x69: // MOV L, C
+                            reg1 = &cpu->L;
+                            reg2 = &cpu->C;
+                            break;
+                        case 0x6A: // MOV L, D
+                            reg1 = &cpu->L;
+                            reg2 = &cpu->D;
+                            break;
+                        case 0x6B: // MOV L, E
+                            reg1 = &cpu->L;
+                            reg2 = &cpu->E;
+                            break;
+                        case 0x6C: // MOV L, H
+                            reg1 = &cpu->L;
+                            reg2 = &cpu->H;
+                            break;
+                        case 0x6D: // MOV L, L
+                            reg1 = &cpu->L;
+                            reg2 = &cpu->L;
+                            break;
+                        case 0x6F: // MOV L, A
+                            reg1 = &cpu->L;
+                            reg2 = &cpu->A;
+                            break;
+                        case 0x78: // MOV A, B
+                            reg1 = &cpu->A;
+                            reg2 = &cpu->B;
+                            break;
+                        case 0x79: // MOV A, C
+                            reg1 = &cpu->A;
+                            reg2 = &cpu->C;
+                            break;
+                        case 0x7A: // MOV A, D
+                            reg1 = &cpu->A;
+                            reg2 = &cpu->D;
+                            break;
+                        case 0x7B: // MOV A, E
+                            reg1 = &cpu->A;
+                            reg2 = &cpu->E;
+                            break;
+                        case 0x7C: // MOV A, H
+                            reg1 = &cpu->A;
+                            reg2 = &cpu->H;
+                            break;
+                        case 0x7D: // MOV A, L
+                            reg1 = &cpu->A;
+                            reg2 = &cpu->L;
+                            break;
+                        case 0x7F: // MOV A, A
+                            reg1 = &cpu->A;
+                            reg2 = &cpu->A;
+                            break;
+                    }
+                    MOV(cpu, reg1, reg2);
                     cpu->PC++;
                     cycles = 5;
                     break;
 
+                // MOV Instructions
+                case 0x7E: // MOV A, M
+                case 0x70: // MOV M, B
+                case 0x6E: // MOV L, M
+                case 0x66: // MOV H, M
+                case 0x5E: // MOV E, M
+                case 0x56: // MOV D, M
+                case 0x4E: // MOV C, M
+                case 0x46: // MOV B, M
+                case 0x71: // MOV M, C
+                case 0x72: // MOV M, D
+                case 0x73: // MOV M, E
+                case 0x74: // MOV M, H
+                case 0x75: // MOV M, L
+                case 0x77: // MOV M, A
+                    switch(*opcode){
+                        case 0x7E: // MOV A, M
+                            reg1 = &cpu->A;
+                            reg2 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            break;
+                        case 0x70: // MOV M, B
+                            reg1 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            reg2 = &cpu->B;
+                            break;
+                        case 0x6E: // MOV L, M
+                            reg1 = &cpu->L;
+                            reg2 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            break;
+                        case 0x66: // MOV H, M
+                            reg1 = &cpu->H;
+                            reg2 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            break;
+                        case 0x5E: // MOV E, M
+                            reg1 = &cpu->E;
+                            reg2 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            break;
+                        case 0x56: // MOV D, M
+                            reg1 = &cpu->D;
+                            reg2 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            break;
+                        case 0x4E: // MOV C, M
+                            reg1 = &cpu->C;
+                            reg2 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            break;
+                        case 0x46: // MOV B, M
+                            reg1 = &cpu->B;
+                            reg2 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            break;
+                        case 0x71: // MOV M, C
+                            reg1 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            reg2 = &cpu->C;
+                            break;
+                        case 0x72: // MOV M, D
+                            reg1 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            reg2 = &cpu->D;
+                            break;
+                        case 0x73: // MOV M, E
+                            reg1 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            reg2 = &cpu->E;
+                            break;
+                        case 0x74: // MOV M, H
+                            reg1 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            reg2 = &cpu->H;
+                            break;
+                        case 0x75: // MOV M, L
+                            reg1 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            reg2 = &cpu->L;
+                            break;
+                        case 0x77: // MOV M, A
+                            reg1 = read_memory(cpu, TO16BIT(cpu->H, cpu->L));
+                            reg2 = &cpu->A;
+                            break;
+                    }
+                    MOV(cpu, reg1, reg2);
+                    cpu->PC++;
+                    cycles = 7;
+                    break;
+
+                // MVI Instructions
                 case 0x06: // MVI B
-                    cpu->B = *read_memory(cpu, cpu->PC + 1);
-                    cpu->PC += 2;
-                    cycles = 7;
-                    break;
                 case 0x0E: // MVI C
-                    cpu->C = *read_memory(cpu, cpu->PC + 1);
-                    cpu->PC += 2;
-                    cycles = 7;
-                    break;
                 case 0x16: // MVI D
-                    cpu->D = *read_memory(cpu, cpu->PC + 1);
-                    cpu->PC += 2;
-                    cycles = 7;
-                    break;
                 case 0x1E: // MVI E
-                    cpu->E = *read_memory(cpu, cpu->PC + 1);
-                    cpu->PC += 2;
-                    cycles = 7;
-                    break;
                 case 0x26: // MVI H
-                    cpu->H = *read_memory(cpu, cpu->PC + 1);
-                    cpu->PC += 2;
-                    cycles = 7;
-                    break;
                 case 0x2E: // MVI L
-                    cpu->L = *read_memory(cpu, cpu->PC + 1);
+                case 0x3E: // MVI A
+                    switch (*opcode) {
+                        case 0x06: // MVI B
+                            reg1 = &cpu->B;
+                            break;
+                        case 0x0E: // MVI C
+                            reg1 = &cpu->C;
+                            break;
+                        case 0x16: // MVI D
+                            reg1 = &cpu->D;
+                            break;
+                        case 0x1E: // MVI E
+                            reg1 = &cpu->E;
+                            break;
+                        case 0x26: // MVI H
+                            reg1 = &cpu->H;
+                            break;
+                        case 0x2E: // MVI L
+                            reg1 = &cpu->L;
+                            break;
+                        case 0x3E: // MVI A
+                            reg1 = &cpu->A;
+                            break;
+                    }
+                    *reg1 = *read_memory(cpu, cpu->PC + 1);
                     cpu->PC += 2;
                     cycles = 7;
                     break;
@@ -937,12 +967,8 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     cpu->PC += 2;
                     cycles = 10;
                     break;
-                case 0x3E: // MVI A
-                    cpu->A = *read_memory(cpu, cpu->PC + 1);
-                    cpu->PC += 2;
-                    cycles = 7;
-                    break;
 
+                // PUSH Instructions
                 case 0xC5: // PUSH B
                     PUSH(cpu, cpu->B, cpu->C);
                     cpu->PC++;
@@ -962,6 +988,7 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     PUSH_PSW(cpu);
                     break;
 
+                // POP Instructions
                 case 0xC1: // POP B
                     POP(cpu, &cpu->B, &cpu->C);
                     cpu->PC++;
@@ -981,6 +1008,7 @@ uint8_t emulate_cycle(i8080_t *cpu){
                     POP_PSW(cpu);
                     break;
 
+                // CALL Instructions
                 case 0xC4: // CALL NZ
                 case 0xCC: // CALL Z
                 case 0xD4: // CALL NC
@@ -993,8 +1021,8 @@ uint8_t emulate_cycle(i8080_t *cpu){
                         default: break;
                     }
                     if(condition){
-                        address = TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1));
-                        CALL(cpu, address);
+                        word = TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1));
+                        CALL(cpu, word);
                         cycles = 17;
                     }
                     else{
@@ -1002,7 +1030,13 @@ uint8_t emulate_cycle(i8080_t *cpu){
                         cycles = 11;
                     }
                     break;
+                case 0xCD: // CALL
+                    CALL(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)));
+                    cpu->PC += 3;
+                    cycles = 17;
+                    break;
 
+                // RET Instructions
                 case 0xC0: // RET NZ
                 case 0xC8: // RET Z
                 case 0xD0: // RET NC
@@ -1023,7 +1057,12 @@ uint8_t emulate_cycle(i8080_t *cpu){
                         cycles = 5;
                     }
                     break;
+                case 0xC9: // RET
+                    RET(cpu);
+                    cycles = 10;
+                    break;
 
+                // JMP Instructions
                 case 0xC2: // JNZ
                 case 0xCA: // JZ
                 case 0xD2: // JNC
@@ -1036,28 +1075,365 @@ uint8_t emulate_cycle(i8080_t *cpu){
                         default: break;
                     }
                     if(condition){
-                        address = TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1));
-                        JMP(cpu, address);
+                        word = TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1));
+                        JMP(cpu, word);
                     }
                     else cpu->PC += 3;
                     cycles = 10;
                     break;
-
-
-                case 0xCD: // CALL
-                    CALL(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)));
+                case 0xC3: // JMP
+                    JMP(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)));
                     cpu->PC += 3;
-                    cycles = 17;
-                    break;
-
-                case 0xC9: // RET
-                    RET(cpu);
                     cycles = 10;
                     break;
 
+                // LDA Instruction
+                case 0x3A: // LDA
+                    cpu->A = *read_memory(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)));
+                    cpu->PC += 3;
+                    cycles = 13;
+                    break;
 
+                // LDAX Instructions
+                case 0x0A: // LDAX B
+                    cpu->A = *read_memory(cpu, TO16BIT(cpu->B, cpu->C));
+                    cpu->PC++;
+                    cycles = 7;
+                    break;
+                case 0x1A: // LDAX D
+                    cpu->A = *read_memory(cpu, TO16BIT(cpu->D, cpu->E));
+                    cpu->PC++;
+                    cycles = 7;
+                    break;
+
+                // STA Instruction
+                case 0x32: // STA
+                    write_memory(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)), cpu->A);
+                    cpu->PC += 3;
+                    cycles = 13;
+                    break;
+
+                // STAX Instructions
+                case 0x02: // STAX B
+                    write_memory(cpu, TO16BIT(cpu->B, cpu->C), cpu->A);
+                    cpu->PC++;
+                    cycles = 7;
+                    break;
+                case 0x12: // STAX D
+                    write_memory(cpu, TO16BIT(cpu->D, cpu->E), cpu->A);
+                    cpu->PC++;
+                    cycles = 7;
+                    break;
+
+                // LXI Instructions
+                case 0x01: // LXI B
+                    LXI(cpu, &cpu->B, &cpu->C, *read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1));
+                    cpu->PC += 3;
+                    cycles = 10;
+                    break;
+                case 0x11: // LXI D
+                    LXI(cpu, &cpu->D, &cpu->E, *read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1));
+                    cpu->PC += 3;
+                    cycles = 10;
+                    break;
+                case 0x21: // LXI H
+                    LXI(cpu, &cpu->H, &cpu->L, *read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1));
+                    cpu->PC += 3;
+                    cycles = 10;
+                    break;
+                case 0x31: // LXI SP
+                    cpu->SP = TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1));
+                    cpu->PC += 3;
+                    cycles = 10;
+                    break;
+
+                // NOP Instructions
+                case 0x00: // NOP
+                    NOP(cpu);
+                    cpu->PC++;
+                    cycles = 4;
+                    break;
+
+                case 0x07: // RLC
+                    cpu->flags.cy = (cpu->A & 0x80) >> 7;
+                    cpu->A = (cpu->A << 1) | cpu->flags.cy;
+                    cpu->PC++;
+                    cycles = 4;
+                    break;
+                case 0x0F: // RRC
+                    cpu->flags.cy = cpu->A & 0x01;
+                    cpu->A = (cpu->A >> 1) | (cpu->flags.cy << 7);
+                    cpu->PC++;
+                    cycles = 4;
+                    break;
+                case 0x17: // RAL
+                    msb = (cpu->A & 0x80) >> 7;
+                    cpu->A = (cpu->A << 1) | cpu->flags.cy;
+                    cpu->flags.cy = msb;
+                    cpu->PC++;
+                    cycles = 4;
+                    break;
+                case 0x1F: // RAR
+                    lsb = (cpu->A & 0x01);
+                    cpu->A = (cpu->A >> 1) | (cpu->flags.cy << 7);
+                    cpu->flags.cy = lsb;
+                    cpu->PC++;
+                    cycles = 4;
+                    break;
+                case 0x22: // SHLD
+                    word = TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1));
+                    write_memory(cpu, word, cpu->L);
+                    write_memory(cpu, word + 1, cpu->H);
+                    cpu->PC += 3;
+                    cycles = 16;
+                    break;
+                case 0x27: // DAA
+                    if((cpu->A & 0x0F) > 9 || cpu->flags.ac){
+                        if((cpu->A & 0x0F) > 9){
+                            cpu->A += 6;
+                        }
+                        if((cpu->A & 0xF0) > 0x90){
+                            cpu->A += 0x60;
+                            cpu->flags.cy = 1;
+                        }
+                        cpu->flags.ac = 1;
+                    }
+                    else{
+                        cpu->flags.ac = 0;
+                    }
+                case 0x2A: // LHLD
+                    word = TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1));
+                    cpu->L = *read_memory(cpu, word);
+                    cpu->H = *read_memory(cpu, word + 1);
+                    cpu->PC += 3;
+                    cycles = 16;
+                    break;
+                case 0x2F: // CMA
+                    cpu->A = ~cpu->A;
+                    cpu->PC++;
+                    cycles = 4;
+                    break;
+                case 0x37: // STC
+                    cpu->flags.cy = 1;
+                    cpu->PC++;
+                    cycles = 4;
+                    break;
+                case 0x3F: // CMC
+                    cpu->flags.cy = !cpu->flags.cy;
+                    cpu->PC++;
+                    cycles = 4;
+                    break;
+
+
+                case 0x76: // HLT
+                    // TODO: cpu->halt = 1;
+                    cpu->PC++;
+                    cycles = 7;
+                    break;
+
+                case 0xC7: // RST 0
+                case 0xCF: // RST 1
+                case 0xD7: // RST 2
+                case 0xDF: // RST 3
+                case 0xE7: // RST 4
+                case 0xEF: // RST 5
+                case 0xF7: // RST 6
+                case 0xFF: // RST 7
+                    // TODO: RST(cpu, (*opcode & 0x38) >> 3);
+                    cpu->PC++;
+                    cycles = 11;
+                    break;
+                case 0xCE: // ACI
+                    word = cpu->A + *read_memory(cpu, cpu->PC + 1) + cpu->flags.cy;
+                    set_flags(cpu, word);
+                    cpu->A = word & 0xFF;
+                    cpu->PC += 2;
+                    cycles = 7;
+                    break;
+                case 0xD3: // OUT
+                    // TODO: OUT(cpu, *read_memory(cpu, cpu->PC + 1), cpu->A);
+                    cpu->PC += 2;
+                    cycles = 10;
+                    break;
+                case 0xDE: // SBI
+                    word = cpu->A - *read_memory(cpu, cpu->PC + 1);
+                    set_flags(cpu, word);
+                    cpu->A = word & 0xFF;
+                    cpu->PC += 2;
+                    cycles = 7;
+                    break;
+                case 0xDB: // IN
+                    // TODO: cpu->A = IN(cpu, *read_memory(cpu, cpu->PC + 1));
+                    cpu->PC += 2;
+                    cycles = 10;
+                    break;
+                case 0xE0: // RPO
+                    if(!cpu->flags.p){
+                        RET(cpu);
+                        cycles = 11;
+                    }
+                    else{
+                        cpu->PC++;
+                        cycles = 5;
+                    }
+                case 0xE2: // JPO
+                    if(!cpu->flags.p){
+                        JMP(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)));
+                    }
+                    else cpu->PC += 3;
+                    cycles = 10;
+                    break;
+                case 0xE3: // XTHL
+                    word = TO16BIT(cpu->H, cpu->L);
+                    cpu->H = *read_memory(cpu, cpu->SP + 1);
+                    cpu->L = *read_memory(cpu, cpu->SP);
+                    write_memory(cpu, cpu->SP + 1, HIGH_BYTE(word));
+                    write_memory(cpu, cpu->SP, LOW_BYTE(word));
+                    cpu->PC++;
+                    cycles = 18;
+                    break;
+                case 0xE4: // CPO
+                    if(!cpu->flags.p){
+                        CALL(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)));
+                        cycles = 17;
+                    }
+                    else{
+                        cpu->PC += 3;
+                        cycles = 11;
+                    }
+                    break;
+                case 0xE8: // RPE
+                    if(cpu->flags.p){
+                        RET(cpu);
+                        cycles = 11;
+                    }
+                    else{
+                        cpu->PC++;
+                        cycles = 5;
+                    }
+                    break;
+                case 0xEA: // JPE
+                    if(cpu->flags.p){
+                        JMP(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)));
+                    }
+                    else cpu->PC += 3;
+                    cycles = 10;
+                    break;
+                case 0xEB: // XCHG
+                    word = TO16BIT(cpu->H, cpu->L);
+                    cpu->H = cpu->D;
+                    cpu->L = cpu->E;
+                    cpu->D = HIGH_BYTE(word);
+                    cpu->E = LOW_BYTE(word);
+                    cpu->PC++;
+                    cycles = 5;
+                    break;
+                case 0xEC: // CPE
+                    if(cpu->flags.p){
+                        CALL(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)));
+                        cycles = 17;
+                    }
+                    else{
+                        cpu->PC += 3;
+                        cycles = 11;
+                    }
+                    break;
+                case 0xF0: // RP
+                    if(!cpu->flags.s){
+                        RET(cpu);
+                        cycles = 11;
+                    }
+                    else{
+                        cpu->PC++;
+                        cycles = 5;
+                    }
+                    break;
+                case 0xF2: // JP
+                    if(!cpu->flags.s){
+                        JMP(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)));
+                    }
+                    else cpu->PC += 3;
+                    cycles = 10;
+                    break;
+                case 0xF4: // CP
+                    if(!cpu->flags.s){
+                        CALL(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)));
+                        cycles = 17;
+                    }
+                    else{
+                        cpu->PC += 3;
+                        cycles = 11;
+                    }
+                    break;
+                case 0xF8: // RM
+                    if(cpu->flags.s){
+                        RET(cpu);
+                        cycles = 11;
+                    }
+                    else{
+                        cpu->PC++;
+                        cycles = 5;
+                    }
+                    break;
+                case 0xFA: // JM
+                    if(cpu->flags.s){
+                        JMP(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)));
+                    }
+                    else cpu->PC += 3;
+                    cycles = 10;
+                    break;
+                case 0xFC: // CM
+                    if(cpu->flags.s){
+                        CALL(cpu, TO16BIT(*read_memory(cpu, cpu->PC + 2), *read_memory(cpu, cpu->PC + 1)));
+                        cycles = 17;
+                    }
+                    else{
+                        cpu->PC += 3;
+                        cycles = 11;
+                    }
+                    break;
+                case 0xFB: // EI
+                    // TODO: cpu->interrupts = 1;
+                    cpu->PC++;
+                    cycles = 4;
+                    break;
+                case 0xF3: // DI
+                    // TODO: cpu->interrupts = 0;
+                    cpu->PC++;
+                    cycles = 4;
+                    break;
+                case 0xE9: // PCHL
+                    cpu->PC = TO16BIT(cpu->H, cpu->L);
+                    cycles = 5;
+                    break;
+                case 0xF9: // SPHL
+                    cpu->SP = TO16BIT(cpu->H, cpu->L);
+                    cpu->PC++;
+                    cycles = 5;
+                    break;
+
+
+                case 0xFD: // CALL
+                case 0xED: // CALL
+                case 0xDD: // CALL
+                case 0xD9: // RET
+                case 0xCB: // JMP
+                    break;
+
+                // NOP Instructions
+                case 0x10: // NOP
+                case 0x20: // NOP
+                case 0x30: // NOP
+                case 0x08: // NOP
+                case 0x18: // NOP
+                case 0x28: // NOP
+                case 0x38: // NOP
+                    //printf("Unimplemented opcode: 0x%02x\n", *opcode);
+                    cpu->PC++;
+                    break;
                 default:
                     printf("Unknown opcode: 0x%02x\n", *opcode);
+                    cpu->PC++;
             }
         }
     }
@@ -1208,4 +1584,13 @@ void RET(i8080_t *cpu){
 
 void JMP(i8080_t *cpu, uint16_t address){
     cpu->PC = address;
+}
+
+void LXI(i8080_t *cpu, uint8_t *reg1, uint8_t *reg2, uint8_t high, uint8_t low){
+    *reg1 = high;
+    *reg2 = low;
+}
+
+void NOP(i8080_t *cpu){
+    // Do nothing
 }
