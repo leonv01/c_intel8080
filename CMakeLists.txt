@@ -7,6 +7,7 @@ file(GLOB SOURCES "src/*.c")
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(intel8080 ${SOURCES})
+add_executable(intel8080 ${SOURCES}
+        src/file_reader.h)
 
 target_link_libraries(intel8080)

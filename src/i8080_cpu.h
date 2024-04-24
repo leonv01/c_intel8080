@@ -56,8 +56,8 @@ void print_state(i8080_t *cpu);
 void NOP(i8080_t *cpu);
 
 // Opcode functions
-void ADD(i8080_t *cpu, uint8_t reg);
-void SUB(i8080_t *cpu, uint8_t reg);
+void ADD(i8080_t *cpu, uint8_t val1, uint8_t val2);
+void SUB(i8080_t *cpu, uint8_t val1, uint8_t val2);
 void ANA(i8080_t *cpu, uint8_t reg);
 void ORA(i8080_t *cpu, uint8_t reg);
 void XRA(i8080_t *cpu, uint8_t reg);
@@ -66,9 +66,7 @@ void INR(i8080_t *cpu, uint8_t *reg);
 void INX(i8080_t *cpu, uint8_t *reg1, uint8_t *reg2);
 void DCR(i8080_t *cpu, uint8_t *reg);
 void DCX(i8080_t *cpu, uint8_t *reg1, uint8_t *reg2);
-void DAD(i8080_t *cpu, uint8_t reg1, uint8_t reg2);
-void MOV(i8080_t *cpu, uint8_t *reg1, const uint8_t *reg2);
-void POP(i8080_t *cpu, uint8_t *reg1, uint8_t *reg2);
+void DAD(i8080_t *cpu, uint8_t reg1, uint8_t reg2);void POP(i8080_t *cpu, uint8_t *reg1, uint8_t *reg2);
 void POP_PSW(i8080_t *cpu);
 void PUSH(i8080_t *cpu, uint8_t reg1, uint8_t reg2);
 void PUSH_PSW(i8080_t *cpu);
@@ -77,6 +75,9 @@ void LXI(i8080_t *cpu, uint8_t *reg1, uint8_t *reg2, uint8_t high, uint8_t low);
 
 void JMP(i8080_t *cpu, uint16_t address);
 void CALL(i8080_t *cpu, uint16_t address);
+uint8_t Ccc(i8080_t *cpu, bool condition, uint16_t address);
+uint8_t Rcc(i8080_t *cpu, bool condition);
+void Jcc(i8080_t *cpu, bool condition, uint16_t address);
 void RET(i8080_t *cpu);
 
 #endif //INTEL8080_I8080_CPU_H
